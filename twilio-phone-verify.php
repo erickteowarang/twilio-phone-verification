@@ -37,29 +37,58 @@ function send_verification_sms($request) {
             $verification = $twilio->verify->v2->services($verifySid)
                 ->verifications
                 ->create($formattedNo, "sms");
+
+            // Create the response object
+            $response = new WP_REST_Response('Your code has been sent.');
+            // Add a custom status code
+            $response->set_status( 201 );
+
+            return $response;
         } else {
-            
+            return new WP_Error(500, 'Your phone number is invalid.');
         }
     } else {
-
+        return new WP_Error(500, 'Your phone number is missing.');
     }
 }
 
 function verify_sms($request) {
     $user_phone = $_REQUEST['phoneno'] ?? '';
+    $user_code = $_REQUEST['phonecode'] ?? '';
 
     $sid    = $_ENV["TWILIO_ACCOUNT_SID"];
     $token  = $_ENV["TWILIO_AUTH_TOKEN"];
     $verifySid = $_ENV["TWILIO_VERIFY_SID"];
     $twilio = new Client($sid, $token);
 
-    $verification_check = $twilio->verify->v2->services($verifySid)
-        ->verificationChecks
-        ->create("152740", // code
-                ["to" => "+61421185565"]
-        );
+    if($user_phone) {
+        $formattedNo = getFormattedPhoneNumber($twilio, $user_phone);
 
-    print($verification_check->status);
+        if ($formattedNo && $user_code) {
+            $verification_check = $twilio->verify->v2->services($verifySid)
+                ->verificationChecks
+                ->create($user_code, // code
+                    ["to" => $formattedNo]
+                );
+
+            $verify_status = $verification_check->status;
+            
+            if($verify_status === 'approved') {
+                // Create the response object
+                $response = new WP_REST_Response('Your code is successful.');
+                // Add a custom status code
+                $response->set_status( 201 );
+
+                return $response;
+            } else {
+                return new WP_Error(500, 'Your code number is invalid.');
+            }
+        } else {
+            return new WP_Error(500, 'Your phone number is invalid.');
+        }
+    } else {
+        return new WP_Error(500, 'Your phone number is missing.');
+    }    
 }
 
 add_action('rest_api_init', function () {
