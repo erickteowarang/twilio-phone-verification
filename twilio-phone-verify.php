@@ -1,7 +1,7 @@
 <?php
 /*
-Plugin Name: Twilio Verify Phone number
-Description: Replace WordPress/Woocommerce's default user registration confirmation with Twilio Verify sms
+Plugin Name: Twilio Verify SMS API
+Description: Adds an API to send and verify registration codes via SMS
 Version: 1.0.0
 */
 require_once 'vendor/autoload.php';
@@ -39,16 +39,16 @@ function send_verification_sms($request) {
                 ->create($formattedNo, "sms");
 
             // Create the response object
-            $response = new WP_REST_Response('Your code has been sent.');
+            $response = new WP_REST_Response('success');
             // Add a custom status code
-            $response->set_status( 201 );
+            $response->set_status( 200 );
 
             return $response;
         } else {
-            return new WP_Error(500, 'Your phone number is invalid.');
+            return new WP_Error('invalid_phone_no', 'Your phone number is invalid.', array('status' => 400));
         }
     } else {
-        return new WP_Error(500, 'Your phone number is missing.');
+        return new WP_Error('missing_phone_no', 'Your phone number is missing.', array('status' => 400));
     }
 }
 
@@ -75,19 +75,19 @@ function verify_sms($request) {
             
             if($verify_status === 'approved') {
                 // Create the response object
-                $response = new WP_REST_Response('Your code is successful.');
+                $response = new WP_REST_Response('success');
                 // Add a custom status code
-                $response->set_status( 201 );
+                $response->set_status( 200 );
 
                 return $response;
             } else {
-                return new WP_Error(500, 'Your code number is invalid.');
+                return new WP_Error('invalid_code_no', 'Your code is invalid.', array('status' => 400));
             }
         } else {
-            return new WP_Error(500, 'Your phone number is invalid.');
+            return new WP_Error('invalid_phone_no', 'Your phone number is invalid.', array('status' => 400));
         }
     } else {
-        return new WP_Error(500, 'Your phone number is missing.');
+        return new WP_Error('missing_phone_no', 'Your phone number is missing.', array('status' => 400));
     }    
 }
 
